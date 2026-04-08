@@ -1,0 +1,7 @@
+[devicef5]
+host ansible_host=
+
+[devicef5:vars]
+ansible_user=
+ansible_password=
+pool_name="pool_ocbqa5.bancatlan.hn"
