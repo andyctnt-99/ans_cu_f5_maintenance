@@ -1,0 +1,11 @@
+/.venv
+vars.py
+scripts/__pycache__
+bdd/__pycache__
+__pycache__
+files/__pycache__
+inventario
+__pycache__/*
+ansible.cfg
+inventory
+.help

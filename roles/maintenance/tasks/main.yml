@@ -1,0 +1,9 @@
+---
+# tasks file for roles/maintenance
+- name: info
+  import_tasks: f5_info.yml
+  delegate_to: localhost
+
+- name: maintenance
+  import_tasks: f5_maintenance.yml
+  delegate_to: localhost

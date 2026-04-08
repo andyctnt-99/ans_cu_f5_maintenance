@@ -1,0 +1,61 @@
+---
+- name: Determinar lista de members a actuar (con address)
+  set_fact:
+    members_to_act: >-
+      {{
+        discovered_members
+        if pool_members_filter == ""
+        else discovered_members
+          | selectattr('name', 'in', pool_members_filter.split(',') | map('trim') | list)
+          | list
+      }}
+
+- name: "[INFO] Members que serán afectados"
+  debug:
+    msg: "Acción '{{ f5_action }}' sobre: {{ members_to_act }}"
+
+# - name: Debug de parámetros de pool members
+#   debug:
+#     msg:
+#       pool: "{{ f5_pool }}"
+#       partition: "{{ f5_partition }}"
+#       name: "{{ item.name.split(':')[0] }}"
+#       port: "{{ item.name.split(':')[1] }}"
+#       address: "{{ item.address }}"
+#       state: "{{ f5_action }}"
+#   loop: "{{ members_to_act }}"
+
+- name: "Aplicar estado '{{ f5_action }}' a pool members"
+  f5networks.f5_modules.bigip_pool_member:
+    pool: "{{ f5_pool }}"
+    partition: "{{ f5_partition }}"
+    name: "{{ item.name.split(':')[0] }}"
+    port: "{{ item.name.split(':')[1] }}"
+    address: "{{ item.address }}"
+    state: "{{ f5_action }}"
+    provider: "{{ provider }}"
+  loop: "{{ members_to_act }}"
+  loop_control:
+    label: "{{ item.name }}"
+  delegate_to: localhost
+
+- name: Verificar estado final de los pool members
+  f5networks.f5_modules.bigip_device_info:
+    gather_subset:
+      - ltm-pools
+    provider: "{{ provider }}"
+  register: device_info_post
+  delegate_to: localhost
+
+- name: "[RESULTADO] Estado final"
+  debug:
+    msg: "{{ item }}"
+  loop: >-
+    {{
+      device_info_post.ltm_pools
+      | selectattr('name', 'equalto', f5_pool)
+      | map(attribute='members')
+      | flatten
+    }}
+  loop_control:
+    label: "{{ item.name }}"

@@ -1,0 +1,22 @@
+---
+- name: Obtener info de todos los pool members
+  f5networks.f5_modules.bigip_device_info:
+    gather_subset:
+      - ltm-pools
+    provider: "{{ provider }}"
+  register: device_info
+
+# Extraer solo los members del pool que nos interesa
+- name: Construir lista de members del pool objetivo
+  set_fact:
+    discovered_members: >-
+      {{
+        device_info.ltm_pools
+        | selectattr('name', 'equalto', f5_pool)
+        | map(attribute='members')
+        | flatten
+      }}
+
+- name: "[INFO] Members que serán afectados"
+  debug:
+    msg: "Acción '{{ f5_action }}' sobre: {{ discovered_members }}"

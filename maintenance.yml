@@ -1,0 +1,6 @@
+---
+- name: Ejecutar mantenimiento
+  hosts: "{{ f5_target_host }}"
+  gather_facts: false
+  roles:
+    - role: maintenance

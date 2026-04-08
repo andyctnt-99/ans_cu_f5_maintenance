@@ -1,3 +1,4 @@
-IP Server
-150.150.61.206
-
+habiltiar el allow white list
+ssh ansible-ise@150.150.61.207
+modify sys httpd allow add { 10.128.0.184 }
+save sys config

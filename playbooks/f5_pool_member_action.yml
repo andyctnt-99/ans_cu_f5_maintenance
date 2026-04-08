@@ -1,0 +1,77 @@
+---
+- name: F5 - Gestión de Pool Members
+  hosts: "{{ f5_target_host }}"
+  gather_facts: false
+  connection: httpapi
+
+  vars:
+    provider:
+      server: '{{ ansible_host }}'
+      user: '{{ ansible_user }}'
+      password: '{{ ansible_password }}'
+      server_port: 443
+      validate_certs: false
+      no_f5_teem: true
+
+  tasks:
+
+    # ── 1. Obtener todos los members del pool ──────────────────────────────────
+    - name: Obtener info de todos los pool members
+      f5networks.f5_modules.bigip_pool_member_info:
+        pool: "{{ f5_pool }}"
+        partition: "{{ f5_partition }}"
+        provider: "{{ provider }}"
+      register: pool_info
+
+    # ── 2. Construir lista de members a afectar ────────────────────────────────
+    - name: Determinar lista de members a actuar
+      set_fact:
+        # Si el filtro está vacío → todos los members descubiertos
+        # Si tiene valor        → solo los del filtro (split por coma)
+        members_to_act: >-
+          {{
+            pool_info.members | map(attribute='name') | list
+            if pool_members_filter == ""
+            else pool_members_filter.split(',') | map('trim') | list
+          }}
+
+    - name: "[INFO] Members que serán afectados"
+      debug:
+        msg: "Acción '{{ f5_action }}' sobre: {{ members_to_act }}"
+
+    # # ── 3. Aplicar acción sobre cada member ───────────────────────────────────
+    # - name: "Aplicar estado '{{ f5_action }}' a pool members"
+    #   f5networks.f5_modules.bigip_pool_member:
+    #     pool: "{{ f5_pool }}"
+    #     partition: "{{ f5_partition }}"
+    #     # El name viene como 'nodo:puerto', separamos ambos
+    #     name: "{{ item.split(':')[0] }}"
+    #     port: "{{ item.split(':')[1] }}"
+    #     state: "{{ f5_action }}"
+    #     provider:
+    #       server: "{{ ansible_host }}"
+    #       user: "{{ ansible_user }}"
+    #       password: "{{ ansible_password }}"
+    #       validate_certs: false
+    #   loop: "{{ members_to_act }}"
+    #   loop_control:
+    #     label: "{{ item }}"
+
+    # # ── 4. Verificar estado resultante ────────────────────────────────────────
+    # - name: Verificar estado final de los pool members
+    #   f5networks.f5_modules.bigip_pool_member_info:
+    #     pool: "{{ f5_pool }}"
+    #     partition: "{{ f5_partition }}"
+    #     provider:
+    #       server: "{{ ansible_host }}"
+    #       user: "{{ ansible_user }}"
+    #       password: "{{ ansible_password }}"
+    #       validate_certs: false
+    #   register: pool_info_post
+
+    # - name: "[RESULTADO] Estado final de todos los members"
+    #   debug:
+    #     msg: "{{ item.name }} | {{ item.address }} | estado: {{ item.session }}/{{ item.state }}"
+    #   loop: "{{ pool_info_post.members }}"
+    #   loop_control:
+    #     label: "{{ item.name }}"
