@@ -4,9 +4,14 @@
     members_to_act: >-
       {{
         discovered_members
-        if pool_members_filter == ""
+        if pool_members_filter == "" or pool_members_filter | length == 0
         else discovered_members
-          | selectattr('name', 'in', pool_members_filter.split(',') | map('trim') | list)
+          | selectattr('name', 'in',
+              pool_members_filter | default([])
+              | map('trim')
+              | reject('equalto', '')
+              | list
+            )
           | list
       }}
 
@@ -14,48 +19,69 @@
   debug:
     msg: "Acción '{{ f5_action }}' sobre: {{ members_to_act }}"
 
-# - name: Debug de parámetros de pool members
-#   debug:
-#     msg:
-#       pool: "{{ f5_pool }}"
-#       partition: "{{ f5_partition }}"
-#       name: "{{ item.name.split(':')[0] }}"
-#       port: "{{ item.name.split(':')[1] }}"
-#       address: "{{ item.address }}"
-#       state: "{{ f5_action }}"
-#   loop: "{{ members_to_act }}"
+- name: block
+  when: members_to_act | length > 0
+  block:
+    - name: "Aplicar estado '{{ f5_action }}' a pool members"
+      f5networks.f5_modules.bigip_pool_member:
+        pool: "{{ f5_pool }}"
+        partition: "{{ f5_partition }}"
+        name: "{{ item.name.split(':')[0] }}"
+        port: "{{ item.name.split(':')[1] }}"
+        address: "{{ item.address }}"
+        state: "{{ f5_action }}"
+        provider: "{{ provider }}"
+      loop: "{{ members_to_act }}"
+      loop_control:
+        label: "{{ item.name }}"
+      delegate_to: localhost
 
-- name: "Aplicar estado '{{ f5_action }}' a pool members"
-  f5networks.f5_modules.bigip_pool_member:
-    pool: "{{ f5_pool }}"
-    partition: "{{ f5_partition }}"
-    name: "{{ item.name.split(':')[0] }}"
-    port: "{{ item.name.split(':')[1] }}"
-    address: "{{ item.address }}"
-    state: "{{ f5_action }}"
-    provider: "{{ provider }}"
-  loop: "{{ members_to_act }}"
-  loop_control:
-    label: "{{ item.name }}"
-  delegate_to: localhost
+    - name: Verificar estado final de los pool members
+      f5networks.f5_modules.bigip_device_info:
+        gather_subset:
+          - ltm-pools
+        provider: "{{ provider }}"
+      register: device_info_post
+      delegate_to: localhost
 
-- name: Verificar estado final de los pool members
-  f5networks.f5_modules.bigip_device_info:
-    gather_subset:
-      - ltm-pools
-    provider: "{{ provider }}"
-  register: device_info_post
-  delegate_to: localhost
+    - name: "[RESULTADO] Estado final"
+      debug:
+        msg: "{{ item }}"
+      loop: >-
+        {{
+          device_info_post.ltm_pools
+          | selectattr('name', 'equalto', f5_pool)
+          | map(attribute='members')
+          | flatten
+        }}
+      loop_control:
+        label: "{{ item.name }}"
 
-- name: "[RESULTADO] Estado final"
-  debug:
-    msg: "{{ item }}"
-  loop: >-
-    {{
-      device_info_post.ltm_pools
-      | selectattr('name', 'equalto', f5_pool)
-      | map(attribute='members')
-      | flatten
-    }}
-  loop_control:
-    label: "{{ item.name }}"
+    - name: Exportar estado final a JSON
+      copy:
+        dest: "{{ role_path }}/files/{{ ansible_host }}.json"
+        content: |
+          {
+            "pool": "{{ f5_pool }}",
+            "members": [
+              {% set members = device_info_post.ltm_pools
+                  | selectattr('name', 'equalto', f5_pool)
+                  | map(attribute='members')
+                  | flatten %}
+              {% for member in members %}
+              {
+                "name": "{{ member.name | default('unknown') }}",
+                "address": "{{ member.address | default('0.0.0.0') }}",
+                "partition": "{{ member.partition | default('Common') }}",
+                "real_state": "{{ member.real_state | default('unknown') }}",
+                "real_session": "{{ member.real_session | default('unknown') }}",
+                "state": "{{ member.state | default('present') }}",
+                "ratio": {{ member.ratio | default(1, true) }},
+                "priority_group": {{ member.priority_group | default(0, true) }},
+                "connection_limit": {{ member.connection_limit | default(0, true) }},
+                "rate_limit": "{{ member.rate_limit | default('no', true) }}"
+              }{% if not loop.last %},{% endif %}
+              {% endfor %}
+            ]
+          }
+      delegate_to: localhost

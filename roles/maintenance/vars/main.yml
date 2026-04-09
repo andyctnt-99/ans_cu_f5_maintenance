@@ -20,7 +20,7 @@ f5_action: "enabled"
 #   pool_members_filter: ""                                         # todos
 #   pool_members_filter: "node_hnqaaolcorpf5.adbancat.hn:80"       # solo uno
 #   pool_members_filter: "node_hnqaaolcorpf5.adbancat.hn:80,node_HNQAFFGENEXUS.ADBancat.hn:80"  # varios
-pool_members_filter: ""
+pool_members_filter: []
 
 provider:
   server: '{{ ansible_host }}'

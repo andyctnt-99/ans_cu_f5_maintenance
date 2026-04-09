@@ -9,3 +9,4 @@ __pycache__/*
 ansible.cfg
 inventory
 .help
+*.json

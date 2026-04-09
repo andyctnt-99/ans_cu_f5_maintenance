@@ -1,5 +1,15 @@
 ---
 # tasks file for roles/maintenance
+
+# - name: Process output and generate vars
+#   template:
+#     src: templates/bdd_vars.j2
+#     dest: "{{ role_path }}/files/scripts/vars.py"
+#     owner: root
+#     mode: '0644'
+#   become: false
+#   delegate_to: localhost
+
 - name: info
   import_tasks: f5_info.yml
   delegate_to: localhost
@@ -7,3 +17,8 @@
 - name: maintenance
   import_tasks: f5_maintenance.yml
   delegate_to: localhost
+
+- name: Proccess Python
+  ansible.builtin.shell: 'python3 {{ role_path }}/files/scripts/process.py'
+  delegate_to: localhost
+  run_once: true
