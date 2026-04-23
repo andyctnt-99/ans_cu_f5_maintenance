@@ -1,16 +1,16 @@
 ---
 
 # Equipo F5 target (en survey será una lista desplegable de hosts)
-f5_target_host: "bigip01"
+#f5_target_host: "bigip01"
 
 # Nombre del pool
-f5_pool: "pool_ocbqa5.bancatlan.hn"
+#f5_pool: "pool_ocbqa5.bancatlan.hn"
 
 # Partición
-f5_partition: "Common"
+#f5_partition: "Common"
 
 # Acción a ejecutar: enabled | disabled | force_offline
-f5_action: "enabled"
+#f5_action: "enabled"
 
 # ─── Filtro de pool members ────────────────────────────────────────────────────
 # VACÍO   → la automatización descubre TODOS los members del pool y actúa sobre todos
@@ -20,7 +20,7 @@ f5_action: "enabled"
 #   pool_members_filter: ""                                         # todos
 #   pool_members_filter: "node_hnqaaolcorpf5.adbancat.hn:80"       # solo uno
 #   pool_members_filter: "node_hnqaaolcorpf5.adbancat.hn:80,node_HNQAFFGENEXUS.ADBancat.hn:80"  # varios
-pool_members_filter: []
+#pool_members_filter: []
 
 provider:
   server: '{{ ansible_host }}'
