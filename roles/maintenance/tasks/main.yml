@@ -11,7 +11,7 @@
   delegate_to: localhost
 
 - debug:
-    msg: "{{f5_credentials}}"
+    msg: "{{pool_members_filter }}"
  
 - name: info
   import_tasks: f5_info.yml
