@@ -1,14 +1,15 @@
 ---
 # tasks file for roles/maintenance
 
-# - name: Process output and generate vars
-#   template:
-#     src: templates/bdd_vars.j2
-#     dest: "{{ role_path }}/files/scripts/vars.py"
-#     owner: root
-#     mode: '0644'
-#   become: false
-#   delegate_to: localhost
+- name: Process output and generate vars
+  template:
+    src: templates/bdd_vars.j2
+    dest: "{{ role_path }}/files/scripts/vars.py"
+    owner: root
+    mode: '0644'
+  become: false
+  delegate_to: localhost
+
 - debug:
     msg: "{{pool_members_filter}}"
  
