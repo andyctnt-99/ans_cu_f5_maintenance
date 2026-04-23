@@ -9,7 +9,9 @@
 #     mode: '0644'
 #   become: false
 #   delegate_to: localhost
-
+- debug:
+    msg: "{{pool_members_filter}}"
+ 
 - name: info
   import_tasks: f5_info.yml
   delegate_to: localhost
@@ -17,7 +19,8 @@
 - name: maintenance
   import_tasks: f5_maintenance.yml
   delegate_to: localhost
-# - name: Proccess Python
-#   ansible.builtin.shell: 'python3 {{ role_path }}/files/scripts/process.py'
-#   delegate_to: localhost
-#   run_once: true
+
+- name: Proccess Python
+  ansible.builtin.shell: 'python3 {{ role_path }}/files/scripts/process.py'
+  delegate_to: localhost
+  run_once: true
