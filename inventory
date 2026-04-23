@@ -1,10 +1,12 @@
 [devicef5]
-bigip01 ansible_host=150.150.61.206
+bigip01 ansible_host=150.150.61.206 credential_position=0
 
 [devicef5:vars]
-ansible_user=
-ansible_password=
 ansible_network_os=f5networks.f5_modules.bigip
 ansible_httpapi_use_ssl=true
 ansible_httpapi_validate_certs=false
 ansible_httpapi_port=443
+parsed_creds="{{ user_credentials | from_yaml if user_credentials is string else user_credentials }}"
+ansible_user="{{ parsed_creds[credential_position | int].user }}"
+ansible_password="{{ parsed_creds[credential_position | int].pass }}"
+ansible_become_password="{{ parsed_creds[credential_position | int].pass }}"
